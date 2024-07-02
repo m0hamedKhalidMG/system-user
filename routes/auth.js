@@ -1,30 +1,66 @@
 const express = require("express");
-const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { JWT_SECRET } = require("../config");
-const User = require("../models/User");
+const Profile = require("../models/Profile");
 
 const router = express.Router();
 
 // Register
 router.post("/register", async (req, res) => {
-  const { email, password } = req.body;
+  const {
+    phoneNumber,
+    nationalId,
+    email,
+    password,
+    first_name,
+    last_name,
+    role,
+    address,
+    n_floor,
+    n_house,
+    location,
+    diseases,
+  } = req.body;
+
+  // Validate that either address fields or location is provided
+  const addressFields = address && n_floor && n_house;
+  const locationFields =
+    location && location.coordinates && location.coordinates.length === 2;
+  if (!addressFields && !locationFields) {
+    return res
+      .status(400)
+      .json({ message: "Either a full address or location must be provided." });
+  }
 
   try {
-    let user = await User.findOne({ email });
+    let user = await Profile.findOne({ email });
     if (user) {
       return res.status(400).json({ msg: "User already exists" });
     }
 
-    user = new User({ email, password });
-    await user.save();
+    user = new Profile({
+        phoneNumber,
+        nationalId,
+        email,
+        password,
+        first_name,
+        last_name,
+        role,
+        address,
+        n_floor,
+        n_house,
+        location,
+        diseases,
+      });
+      await user.save();
 
     const payload = { user: { id: user.id } };
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "1h" });
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "3h" });
 
     res.json({ token });
   } catch (err) {
-    res.status(500).json({ msg: "Server error" });
+    console.log(err)
+    res.status(500).json({  err });
   }
 });
 
@@ -33,7 +69,7 @@ router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user = await User.findOne({ email });
+    const user = await Profile.findOne({ email });
     if (!user) {
       return res.status(400).json({ msg: "Invalid credentials" });
     }
@@ -48,6 +84,7 @@ router.post("/login", async (req, res) => {
 
     res.json({ token });
   } catch (err) {
+    console.log(err)
     res.status(500).json({ msg: "Server error" });
   }
 });
