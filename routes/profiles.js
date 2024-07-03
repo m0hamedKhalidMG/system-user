@@ -5,7 +5,6 @@ const multer = require("multer");
 const fs = require("fs").promises; 
 const path = require("path");
 const bucket = require('../firebase'); // Firebase bucket initialized from firebase.js
-const axios = require("axios");
 const RequestsCar = require("../models/requestCars");
 const {createAmbulanceRequest} = require("../socketServer");
 
