@@ -4,7 +4,7 @@ const { PORT, MONGO_URI } = require('./config');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const profileRoutes = require('./routes/profiles');
-
+const { initializePusher } = require("./socketServer");
 const app = express();
 
 // Middleware
@@ -25,7 +25,7 @@ app.use(function (req, res, next) {
   }
 });
 app.use('/uploads', express.static('uploads'));
-
+const pusher = initializePusher();
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
