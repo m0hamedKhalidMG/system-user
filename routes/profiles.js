@@ -4,22 +4,14 @@ const Profile = require("../models/Profile");
 const multer = require("multer");
 const fs = require("fs").promises; 
 const path = require("path");
+const bucket = require('../firebase'); // Firebase bucket initialized from firebase.js
 
 const router = express.Router();
 
-// Multer setup for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  },
-});
 
 const upload = multer({
-  storage: storage,
-  // Limiting file size to 10MB
+    storage: multer.memoryStorage(),
+    // Limiting file size to 10MB
   limits: { fileSize: 10 * 1024 * 1024 },
  
   
@@ -44,25 +36,43 @@ router.post("/add-disease", auth, async (req, res) => {
           return res.status(400).json({ msg: 'File upload error: ' + err.message });
         }
     const { name ,description,doctorname} = req.body;
-    const documents = req.files.map(file => file.filename);
-  
-    if (!name || documents.length === 0) {
-      return res.status(400).json({ msg: "Please provide name and upload documents" });
+    const files = req.files;
+
+    if (!name || files.length === 0) {
+      return res.status(400).json({ msg: 'Please provide name and upload documents' });
     }
-    
+  
     try {
       let profile = await Profile.findById(req.user.id);
   
       if (!profile) {
-        return res.status(404).json({ msg: "Profile not found" });
+        return res.status(404).json({ msg: 'Profile not found' });
       }
   
+      const uploadPromises = files.map(async (file) => {
+        const filename = `${Date.now()}-${file.originalname}`;
+        const fileUpload = bucket.file(filename);
+  
+        await fileUpload.save(file.buffer, {
+          metadata: {
+            contentType: file.mimetype,
+          },
+        });
+  
+        return {
+          name: file.originalname,
+          url: `https://storage.googleapis.com/${bucket.name}/${filename}`, // Update with your storage bucket URL
+        };
+      });
+  
+      const documents = await Promise.all(uploadPromises);
+  
       // Check if the disease already exists for the user
-      const existingDiseaseIndex = profile.diseases.findIndex(disease => disease.name === name);
+      const existingDiseaseIndex = profile.diseases.findIndex((disease) => disease.name === name);
   
       if (existingDiseaseIndex !== -1) {
         // Disease with the same name exists, add files to it
-        profile.diseases[existingDiseaseIndex].documents = [...profile.diseases[existingDiseaseIndex].documents, ...documents];
+        profile.diseases[existingDiseaseIndex].documents.push(...documents);
       } else {
         // Disease does not exist, create a new entry
         const newDisease = {
@@ -77,11 +87,11 @@ router.post("/add-disease", auth, async (req, res) => {
       profile = await profile.save();
       res.json(profile);
     } catch (err) {
-      console.error("Error adding or updating disease:", err);
-      res.status(500).json({ msg: "Server error" });
+      console.error('Error adding or updating disease:', err);
+      res.status(500).json({ msg: 'Server error' });
     }
-});
-});
+  });  });
+
 router.delete("/delete-disease/:diseaseId", auth, async (req, res) => {
   const diseaseId = req.params.diseaseId;
 
