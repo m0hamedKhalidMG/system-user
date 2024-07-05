@@ -5,6 +5,7 @@ const multer = require("multer");
 const fs = require("fs").promises; 
 const path = require("path");
 const bucket = require('../firebase'); // Firebase bucket initialized from firebase.js
+const axios = require("axios");
 const RequestsCar = require("../models/requestCars");
 const {createAmbulanceRequest} = require("../socketServer");
 
@@ -37,7 +38,7 @@ router.post("/add-disease", auth, async (req, res) => {
         } else if (err) {
           return res.status(400).json({ msg: 'File upload error: ' + err.message });
         }
-    const { name ,description,doctorname} = req.body;
+    const { name ,description,doctorname,doctorNumber} = req.body;
     const files = req.files;
 
     if (!name || files.length === 0) {
@@ -50,7 +51,6 @@ router.post("/add-disease", auth, async (req, res) => {
       if (!profile) {
         return res.status(404).json({ msg: 'Profile not found' });
       }
-  
       const uploadPromises = files.map(async (file) => {
         const filename = `${Date.now()}-${file.originalname}`;
         const fileUpload = bucket.file(filename);
@@ -81,6 +81,7 @@ router.post("/add-disease", auth, async (req, res) => {
           name,
           description,
           doctorname,
+          doctorNumber,
           documents,
         };
         profile.diseases.push(newDisease);
