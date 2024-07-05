@@ -2,6 +2,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const { PORT, MONGO_URI } = require('./config');
 const authRoutes = require('./routes/auth');
+const  hospitalsRoutes= require('./routes/hospitals');
+const  requestsRoutes= require('./routes/requests');
+
 const userRoutes = require('./routes/users');
 const profileRoutes = require('./routes/profiles');
 const { initializePusher } = require("./socketServer");
@@ -30,6 +33,8 @@ const pusher = initializePusher();
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/profiles', profileRoutes);
+app.use('/api/hospatials', hospitalsRoutes);
+app.use('/api/requests', requestsRoutes);
 
 // Connect to MongoDB
 mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
