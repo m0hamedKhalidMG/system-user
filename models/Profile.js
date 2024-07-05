@@ -15,6 +15,10 @@ const DiseaseSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+   doctorNumber: {
+    type: String,
+    required: true,
+  },
   documents: [
     {
       name: {
